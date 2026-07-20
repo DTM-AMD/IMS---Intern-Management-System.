@@ -248,6 +248,18 @@ tr:hover td{background:#f8f9fc;}
 .attendance-summary{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
 .attendance-summary .pill{background:#f3f5f9;border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:700;color:var(--navy);}
 
+/* ---------- CLOUD SYNC / AUTH ---------- */
+.sync-status{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--muted);padding:6px 10px;border-radius:8px;background:rgba(10,30,66,.06);}
+.sync-status[hidden]{display:none;}
+.sync-status .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+.sync-status.ok .dot{background:var(--green);}
+.sync-status.busy .dot{background:var(--gold);}
+.sync-status.err .dot{background:var(--red);}
+.auth-form{display:flex;flex-direction:column;gap:14px;}
+.auth-error{color:var(--red);font-size:12.5px;min-height:16px;}
+.auth-brand{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:6px;text-align:center;}
+.auth-brand .brand-mark{margin:0;}
+
 .salary-row{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-bottom:8px;}
 .salary-row .meta{font-size:12.5px;color:var(--ink);}
 .salary-row .meta b{color:var(--navy);}
@@ -278,6 +290,27 @@ footer.appfoot b{color:var(--navy);}
 </head>
 <body>
 
+<!-- AUTH / CLOUD SYNC GATE -->
+<div class="modal-overlay" id="authOverlay" style="z-index:5000;">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>Sign In</h3>
+    </div>
+    <div class="modal-body">
+      <div class="auth-brand">
+        <div class="brand-mark">IMS</div>
+        <p class="subtle">Sign in to load your synced Intern Management data. Your data is saved to the cloud so it stays the same on every device.</p>
+      </div>
+      <form class="auth-form" id="authForm">
+        <div class="field"><label>Email</label><input type="email" id="authEmail" autocomplete="username" required></div>
+        <div class="field"><label>Password</label><input type="password" id="authPassword" autocomplete="current-password" required></div>
+        <div class="auth-error" id="authError"></div>
+        <button type="submit" class="btn btn-gold" id="authSubmit">Sign In</button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <header class="topbar">
   <div class="topbar-inner">
     <div class="brandblock">
@@ -289,10 +322,12 @@ footer.appfoot b{color:var(--navy);}
     </div>
     <div class="topbar-right">
       <div class="topbar-actions">
+        <div class="sync-status" id="syncStatus" hidden><span class="dot"></span><span id="syncStatusText">Offline</span></div>
         <button class="btn btn-ghost btn-sm" id="btnExportAll">Backup Data</button>
         <label class="btn btn-ghost btn-sm" style="cursor:pointer;">Restore
           <input type="file" id="restoreFile" accept="application/json" style="display:none;">
         </label>
+        <button class="btn btn-ghost btn-sm" id="btnSignOut" style="display:none;">Sign Out</button>
         <button class="btn btn-gold" id="btnAddIntern">+ Add Intern</button>
       </div>
       <div class="adani-logo-chip"><img src="data:image/png;base64,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" alt="Adani Airports"></div>
@@ -419,7 +454,7 @@ footer.appfoot b{color:var(--navy);}
             <label class="btn btn-outline btn-sm" style="cursor:pointer;">Upload Photo
               <input type="file" id="photoInput" accept="image/*" style="display:none;">
             </label>
-            <div class="subtle" style="margin-top:6px;">Stored locally in your browser (localStorage).</div>
+            <div class="subtle" style="margin-top:6px;">Saved with this intern's record and synced to the cloud when cloud sync is enabled.</div>
           </div>
         </div>
         <div class="form-grid">
@@ -533,6 +568,9 @@ footer.appfoot b{color:var(--navy);}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
 (function(){
 "use strict";
@@ -575,8 +613,138 @@ function saveDB(){
   }catch(e){
     showToast("Storage full or unavailable. Could not save.", true);
   }
+  queueCloudSave();
 }
 var DB = loadDB();
+
+/* =============== CLOUD SYNC (Firebase) =============== */
+/* To enable cross-device sync:
+   1. Create a free project at https://console.firebase.google.com
+   2. Build > Authentication > Get started > Sign-in method > enable "Email/Password".
+      Then Authentication > Users > Add user, for each account that should be able to
+      sign in (leave self sign-up unused so nobody else can create an account).
+   3. Build > Firestore Database > Create database (start in production mode).
+   4. In Firestore > Rules, paste:
+        rules_version = '2';
+        service cloud.firestore {
+          match /databases/{database}/documents {
+            match /ims_data/{userId} {
+              allow read, write: if request.auth != null && request.auth.uid == userId;
+            }
+          }
+        }
+   5. Project settings (gear icon) > General > "Your apps" > Add app > Web app.
+      Copy the firebaseConfig values into FIREBASE_CONFIG below. */
+var FIREBASE_CONFIG = {
+  apiKey: "YOUR_FIREBASE_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+var CLOUD_COLLECTION = "ims_data";
+var CLOUD_ENABLED = FIREBASE_CONFIG.apiKey.indexOf("YOUR_") !== 0 && FIREBASE_CONFIG.projectId.indexOf("YOUR_") !== 0;
+var fbAuth = null, fbStore = null;
+if(CLOUD_ENABLED && window.firebase){
+  firebase.initializeApp(FIREBASE_CONFIG);
+  fbAuth = firebase.auth();
+  fbStore = firebase.firestore();
+}
+var cloudUserId = null;
+var cloudInitialized = false;
+var cloudSaveTimer = null;
+
+function setSyncStatus(state, text){
+  var el = document.getElementById("syncStatus");
+  var txt = document.getElementById("syncStatusText");
+  if(!el || !txt) return;
+  el.hidden = false;
+  el.className = "sync-status" + (state ? " "+state : "");
+  txt.textContent = text;
+}
+function showAuthOverlay(){ document.getElementById("authOverlay").hidden = false; }
+function hideAuthOverlay(){ document.getElementById("authOverlay").hidden = true; }
+
+function applyRemoteDB(remote){
+  DB = remote;
+  if(!DB.interns) DB.interns = [];
+  if(!DB.meta) DB.meta = {lastSalaryPopupMonth:""};
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(DB)); }catch(e){}
+  refreshAllViews();
+  checkSalaryPopup();
+}
+
+function pushToCloud(){
+  if(!CLOUD_ENABLED || !cloudUserId) return;
+  setSyncStatus("busy", "Saving...");
+  fbStore.collection(CLOUD_COLLECTION).doc(cloudUserId).set({data:DB, updatedAt:firebase.firestore.FieldValue.serverTimestamp()})
+    .then(function(){ setSyncStatus("ok", "Synced"); })
+    .catch(function(){ setSyncStatus("err", "Sync failed"); });
+}
+function queueCloudSave(){
+  if(!CLOUD_ENABLED || !cloudUserId) return;
+  if(cloudSaveTimer) clearTimeout(cloudSaveTimer);
+  setSyncStatus("busy", "Saving...");
+  cloudSaveTimer = setTimeout(pushToCloud, 1200);
+}
+
+function onCloudSignedIn(user){
+  cloudUserId = user.uid;
+  document.getElementById("btnSignOut").style.display = "inline-flex";
+  if(cloudInitialized){ hideAuthOverlay(); return; }
+  cloudInitialized = true;
+  setSyncStatus("busy", "Loading cloud data...");
+  fbStore.collection(CLOUD_COLLECTION).doc(cloudUserId).get()
+    .then(function(doc){
+      if(doc.exists && doc.data().data){
+        applyRemoteDB(doc.data().data);
+        setSyncStatus("ok", "Synced");
+      }else{
+        pushToCloud();
+      }
+      hideAuthOverlay();
+    })
+    .catch(function(){
+      setSyncStatus("err", "Cloud load failed");
+      hideAuthOverlay();
+    });
+}
+function onCloudSignedOut(){
+  cloudUserId = null;
+  cloudInitialized = false;
+  document.getElementById("btnSignOut").style.display = "none";
+  setSyncStatus(null, "Offline");
+  showAuthOverlay();
+}
+function initCloudSync(){
+  if(!CLOUD_ENABLED || !window.firebase){
+    hideAuthOverlay();
+    return;
+  }
+  document.getElementById("authForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var email = document.getElementById("authEmail").value.trim();
+    var password = document.getElementById("authPassword").value;
+    var errEl = document.getElementById("authError");
+    var btn = document.getElementById("authSubmit");
+    errEl.textContent = "";
+    btn.disabled = true; btn.textContent = "Signing in...";
+    fbAuth.signInWithEmailAndPassword(email, password).then(function(){
+      btn.disabled = false; btn.textContent = "Sign In";
+    }).catch(function(err){
+      btn.disabled = false; btn.textContent = "Sign In";
+      errEl.textContent = err.message;
+    });
+  });
+  document.getElementById("btnSignOut").addEventListener("click", function(){
+    fbAuth.signOut();
+  });
+  fbAuth.onAuthStateChanged(function(user){
+    if(user){ onCloudSignedIn(user); }
+    else{ onCloudSignedOut(); }
+  });
+}
 
 /* =============== HELPERS =============== */
 function pad(n){ n = String(n); return n.length<2 ? "0"+n : n; }
@@ -1394,6 +1562,7 @@ function refreshAllViews(){
 document.getElementById("salaryYear").value = new Date().getFullYear();
 refreshAllViews();
 checkSalaryPopup();
+initCloudSync();
 
 /* Expose needed functions globally for inline onclick handlers */
 window.IMS = {
